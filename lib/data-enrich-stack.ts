@@ -28,11 +28,9 @@ export class DataEnrichStack extends Construct {
     /**
      * Create a SQS queue to receive raw data from the S3 bucket
      */
-    if (props.sqsForS3Notification) {
-      const queue_raw_data = new sqs.Queue(this, "QueueS3RawData", {
-        visibilityTimeout: cdk.Duration.seconds(300)
-      });
-    }
+    const queue_raw_data = new sqs.Queue(this, "QueueS3RawData", {
+      visibilityTimeout: cdk.Duration.seconds(300)
+    });
 
     /**
      * Create the policy for lambda
@@ -64,7 +62,7 @@ export class DataEnrichStack extends Construct {
         "PluginDataResolver",
         {
           entry: "src/lambda/",
-          index: pluginDataResolverIndex,   - ORG: index: "plugin_data_resolver.py",
+          index: pluginDataResolverIndex, //ORG: index: "plugin_data_resolver.py",
           handler: "lambda_handler",
           runtime: lambda.Runtime.PYTHON_3_9,
           memorySize: 2048,
@@ -96,11 +94,9 @@ export class DataEnrichStack extends Construct {
     /**
      * Create a SQS queue to receive processed data from the S3 bucket
      */
-    if (props.sqsForS3Notification) {
-      const queue_processed_data = new sqs.Queue(this, "QueueS3ProcessedData", {
-        visibilityTimeout: cdk.Duration.seconds(300)
-      });
-    }
+    const queue_processed_data = new sqs.Queue(this, "QueueS3ProcessedData", {
+      visibilityTimeout: cdk.Duration.seconds(300)
+    });
   
     /**
      * Create a Lambda Function to load processed files to BigQuery
