@@ -15,7 +15,9 @@
       "kafka_connect_key_id": "",
       "kafka_connect_secret": "",
       "enable_data_enrich": true,
-      "enable_data_enrich_with_sqs": true
+      "enable_data_enrich_with_sqs": true,
+      "bq_project_name": "string",
+      "bq_dataset": "string"
     },
     "Dev": {
       "project_name": "uba-app-test",
@@ -32,7 +34,9 @@
       "kafka_connect_key_id": "",
       "kafka_connect_secret": "",
       "enable_data_enrich": true,
-      "enable_data_enrich_with_sqs": true
+      "enable_data_enrich_with_sqs": true,
+      "bq_project_name": "us-jm-project-1.data_ingestion_test_1",
+      "bq_dataset": "data_ingestion_test_1"
     }
   }
 }
