@@ -439,7 +439,7 @@ export class DataIngestStack extends Construct {
     //  define EBS for EC2 instances - 50GB are recommended
     const blockDeviceVolume = autoscaling.BlockDeviceVolume.ebs(50, { encrypted: true, volumeType: autoscaling.EbsDeviceVolumeType.GP3});
     const blockDevice: autoscaling.BlockDevice = {
-      deviceName: '/dev/nvme0n1',
+      deviceName: '',
       volume: blockDeviceVolume,
     };
 
