@@ -1,0 +1,29 @@
+{
+  "name": "analytics-app",
+  "version": "0.1.0",
+  "bin": {
+    "analytics-app": "bin/analytics-app.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/node": "10.17.27",
+    "aws-cdk": "^1.155.0",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-glue-alpha": "*",
+    "@aws-cdk/aws-kinesisfirehose-alpha": "*",
+    "@aws-cdk/aws-kinesisfirehose-destinations-alpha": "*",
+    "@aws-cdk/aws-lambda-python-alpha": "*",
+    "@aws-cdk/aws-msk-alpha": "*",
+    "@aws-sdk/client-s3": "*",
+    "aws-cdk-lib": "^2.23.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.16"
+  }
+}
