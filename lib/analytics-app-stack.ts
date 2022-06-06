@@ -20,7 +20,9 @@ export interface AnalyticsStackProps extends cdk.StackProps {
     readonly kafka_connect_key_id: string,
     readonly kafka_connect_secret: string,
     readonly enable_data_enrich: boolean,
-    readonly enable_data_enrich_with_sqs: boolean
+    readonly enable_data_enrich_with_sqs: boolean,
+    readonly bq_project_name: string,
+    readonly bq_dataset: string
 }
 
 export class AnalyticsStack extends cdk.Stack {
@@ -50,6 +52,8 @@ export class AnalyticsStack extends cdk.Stack {
           appSubnetSecurityGroup: dataIngestStack.appSubnetSecurityGroup,
           s3Bucket: dataIngestStack.s3Bucket,
           sqsForS3Notification: props.enable_data_enrich_with_sqs,
+          bqProjectName: props.bq_project_name,
+          bqDataSet: props.bq_dataset
         });
       }
     }

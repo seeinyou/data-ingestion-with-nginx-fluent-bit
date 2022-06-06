@@ -5,7 +5,6 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as efs from 'aws-cdk-lib/aws-efs';
 import * as s3_assets from 'aws-cdk-lib/aws-s3-assets'
 import * as path from 'path';
-// import { KeyPair } from 'cdk-ec2-key-pair';
 import { Construct } from 'constructs';
 import * as msk from '@aws-cdk/aws-msk-alpha';
 import * as kinesis from 'aws-cdk-lib/aws-kinesis';
@@ -17,8 +16,7 @@ import * as cloudformation from 'aws-cdk-lib/aws-cloudformation';
 import autoscaling = require('aws-cdk-lib/aws-autoscaling');
 import elbv2 = require('aws-cdk-lib/aws-elasticloadbalancingv2');
 import { Vpc } from "aws-cdk-lib/aws-ec2";
-
-
+// import { KeyPair } from 'cdk-ec2-key-pair';
 
 
 export interface DataIngestStackProps {
@@ -56,13 +54,6 @@ export class DataIngestStack extends Construct {
     const asg_min_capacity = props.asg_min_capacity;
     const asg_max_capacity = props.asg_max_capacity;
     const asg_desired_capacity = props.asg_desired_capacity;
-
-    // Set up a bucket
-    // const bucket = new s3.Bucket(this, 'analytics-app-bucket', {
-    //     accessControl: s3.BucketAccessControl.BUCKET_OWNER_FULL_CONTROL,
-    //     encryption: s3.BucketEncryption.S3_MANAGED,
-    //     blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL
-    // });
 
     const td_agent_bit_conf_asset = new s3_assets.Asset(this, 'td_agent_bit_conf_asset', { path: path.join(__dirname, '../src/td-agent-bit.conf') });
     const nginx_conf_asset = new s3_assets.Asset(this, 'nginx_conf_asset', { path: path.join(__dirname, '../src/nginx.conf') });
@@ -218,7 +209,7 @@ export class DataIngestStack extends Construct {
     }
     role.addToPolicy(iam.PolicyStatement.fromJson(mkcRoleStatement));
 
-    //Added by JM - Create an EFS drive
+    // Create an EFS drive
     const fileSystem = new efs.FileSystem(this, 'EfsForEC2', {
       vpc: this.clientVpc,
       performanceMode: efs.PerformanceMode.GENERAL_PURPOSE
@@ -226,8 +217,6 @@ export class DataIngestStack extends Construct {
 
     const base_arch = 'aarch64';
     const cpuType = ec2.AmazonLinuxCpuType.ARM_64;
-    // const base_arch = 'x86_64';
-    // const cpuType = ec2.AmazonLinuxCpuType.X86_64;
 
     // Use Latest Amazon Linux Image - CPU Type ARM64
     const ami = new ec2.AmazonLinuxImage({
@@ -287,13 +276,9 @@ export class DataIngestStack extends Construct {
         'wget https://archive.apache.org/dist/kafka/2.6.2/kafka_2.12-2.6.2.tgz',
         'tar -xzf kafka_2.12-2.6.2.tgz',
         'kafka_2.12-2.6.2/bin/kafka-topics.sh --create --zookeeper '+mskCluster.zookeeperConnectionString+' --replication-factor 2 --partitions 2 --topic '+MACRO_FLUENTBIT_OUTPUT_KAFKA,
-
         'mkdir kafka-connect-s3 && cd kafka-connect-s3',
         'wget https://github.com/lensesio/stream-reactor/releases/download/2.1.3/kafka-connect-aws-s3-2.1.3.1-2.5.0-all.jar',
-        // 'zip kafka-connect-aws-s3-2.1.3.1-2.5.0-all.zip kafka-connect-aws-s3-2.1.3.1-2.5.0-all.jar',
-        // 'aws s3 cp kafka-connect-aws-s3-2.1.3.1-2.5.0-all.zip s3://'+this.s3Bucket.bucketName+'/kafka-connect-s3/',
         'aws s3 cp kafka-connect-aws-s3-2.1.3.1-2.5.0-all.jar s3://'+this.s3Bucket.bucketName+'/kafka-connect-s3/',
-        
         'sudo pip3 install boto3',
         'aws s3 cp '+mkc_plugin_py_asset.s3ObjectUrl+' /tmp/mkc-plugin.py',
         'sed "s/MACRO_FLUENTBIT_OUTPUT_AWS_REGION/'+MACRO_FLUENTBIT_OUTPUT_AWS_REGION
@@ -308,7 +293,6 @@ export class DataIngestStack extends Construct {
             +'/g" /tmp/mkc-plugin.py > ./mkc-plugin.py',
         'chmod +x ./mkc-plugin.py',
         'python3 mkc-plugin.py '+props.kafka_connect_secret +' '+ mkcRole.roleArn,
-        
       );
     }
     if (props.ingestion_output_target_kinesis_stream) {
@@ -451,24 +435,13 @@ export class DataIngestStack extends Construct {
         'sudo echo $?',
         'sudo /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so -c /fluent-bit/etc/fluent-bit.conf', 
     );
-
-    
-    /* Added by JM */
-    // const tagPropertyProperty: autoscaling.CfnAutoScalingGroup.TagPropertyProperty = {
-    //   key: 'resource',
-    //   propagateAtLaunch: true,
-    //   value: 'ec2',
-    // };
-  
-    // Added by JM - define EBS for EC2 instances
-    // const blockDeviceVolume = autoscaling.BlockDeviceVolume.ebs(20);
-    // const blockDevice = autoscaling.BlockDevice = ({
-    //   //deviceName: 'deviceName',
-    //   volume: blockDeviceVolume,
-    
-    //   // the properties below are optional
-    //   mappingEnabled: false
-    // });
+ 
+    //  define EBS for EC2 instances - 50GB are recommended
+    const blockDeviceVolume = autoscaling.BlockDeviceVolume.ebs(50, { encrypted: true, volumeType: autoscaling.EbsDeviceVolumeType.GP3});
+    const blockDevice: autoscaling.BlockDevice = {
+      deviceName: '/dev/nvme0n1',
+      volume: blockDeviceVolume,
+    };
 
     const updatePolicy = autoscaling.UpdatePolicy.replacingUpdate();
     
@@ -478,7 +451,7 @@ export class DataIngestStack extends Construct {
     const asg = new autoscaling.AutoScalingGroup(this, 'ASG', {
         vpc: this.clientVpc,
         instanceType: ec2.InstanceType.of(ec2.InstanceClass.COMPUTE6_GRAVITON2, ec2.InstanceSize.MEDIUM),
-        // blockDevices: {},
+        blockDevices: [ blockDevice ],
         machineImage: ami,
         securityGroup: this.appSubnetSecurityGroup,
         minCapacity: asg_min_capacity,
@@ -493,7 +466,7 @@ export class DataIngestStack extends Construct {
         updatePolicy: updatePolicy,
         userData: userData
     });
-    // Added by JM - Allow EC2 instances to access EFS
+    //  Allow EC2 instances to access EFS
     fileSystem.connections.allowDefaultPortFrom(asg);
   
     userData.addSignalOnExitCommand(asg);
@@ -570,24 +543,8 @@ export class DataIngestStack extends Construct {
         predefinedMetric: autoscaling.PredefinedMetric.ASG_AVERAGE_CPU_UTILIZATION,
     });
 
-    
-  
-    // connector.class=io.lenses.streamreactor.connect.aws.s3.sink.S3SinkConnector
-    // key.converter.schemas.enable=false
-    // connect.s3.kcql=INSERT INTO mkc-tutorial-destination-bucket:tutorial SELECT * FROM mkc-tutorial-topic
-    // aws.region=us-east-1
-    // tasks.max=2
-    // topics=mkc-tutorial-topic
-    // schema.enable=false
-    // value.converter=org.apache.kafka.connect.storage.StringConverter
-    // errors.log.enable=true
-    // key.converter=org.apache.kafka.connect.storage.StringConverter
-
-
     // Create outputs for connecting
     new cdk.CfnOutput(this, 'Load balancer Address', { value: lb.loadBalancerDnsName });
     new cdk.CfnOutput(this, 'td_agent_bit_conf_asset.s3ObjectUrl', { value: td_agent_bit_conf_asset.s3ObjectUrl })
-    // new cdk.CfnOutput(this, 'Download Key Command', { value: 'aws secretsmanager get-secret-value --secret-id ec2-ssh-key/cdk-keypair/private --query SecretString --output text > cdk-key.pem && chmod 400 cdk-key.pem' })
-    // new cdk.CfnOutput(this, 'ssh command', { value: 'ssh -i cdk-key.pem -o IdentitiesOnly=yes ec2-user@ec2Instance.instancePublicIp' })
   }
 }

@@ -17,21 +17,22 @@ export interface DataEnrichStackProps {
     readonly appSubnetSecurityGroup: ISecurityGroup,
     readonly s3Bucket: s3.IBucket,
     readonly sqsForS3Notification: boolean,
+    readonly bqProjectName: string,
+    readonly bqDataSet: string
 }
 
 export class DataEnrichStack extends Construct {
   constructor(scope: Construct, id: string, props: DataEnrichStackProps) {
     super(scope, id);
-    
-    const sqsForS3Notification = true;
 
     /**
      * Create a SQS queue to receive raw data from the S3 bucket
      */
-    const queue_raw_data = new sqs.Queue(this, "QueueS3RawData", {
-      visibilityTimeout: cdk.Duration.seconds(300)
-    });
-
+    if (props.sqsForS3Notification) {
+      const queue_raw_data = new sqs.Queue(this, "QueueS3RawData", {
+        visibilityTimeout: cdk.Duration.seconds(300)
+      });
+    }
 
     /**
      * Create the policy for lambda
@@ -49,7 +50,7 @@ export class DataEnrichStack extends Construct {
         resources: ["*"]
       })
 
-    // Added by JM - Enable SQS for S3 or not
+    // Enable SQS for S3 or not
     let pluginDataResolverIndex = 'lambda_raw_data_transform.py';
     let loadLogfileToBqIndex = 'lambda_load_logfile_to_bq.py';
 
@@ -63,7 +64,7 @@ export class DataEnrichStack extends Construct {
         "PluginDataResolver",
         {
           entry: "src/lambda/",
-          index: pluginDataResolverIndex, //Added by JM - ORG: index: "plugin_data_resolver.py",
+          index: pluginDataResolverIndex,   - ORG: index: "plugin_data_resolver.py",
           handler: "lambda_handler",
           runtime: lambda.Runtime.PYTHON_3_9,
           memorySize: 2048,
@@ -71,7 +72,7 @@ export class DataEnrichStack extends Construct {
             REGION_NAME: cdk.Aws.REGION,
             S3_BUCKET_NAME: props.s3Bucket.bucketName,
             DEFAULT_TABLENAME: 'lambda-target-real-2',
-            S3_NEW_FILE_PREFIX: 'processed-nginx-logs/', //Added by JM
+            S3_NEW_FILE_PREFIX: 'processed-nginx-logs/',  
           },
           timeout: cdk.Duration.seconds(300),
           //role: props.role,
@@ -81,33 +82,25 @@ export class DataEnrichStack extends Construct {
         }
     );
     pluginDataResolver.addToRolePolicy(lambdaPolicyStatement);
-    
+
     if (props.sqsForS3Notification) {
       pluginDataResolver.addEventSource(new SqsEventSource(queue_raw_data, {}));
       props.s3Bucket.addEventNotification(s3.EventType.OBJECT_CREATED, new s3n.SqsDestination(queue_raw_data), {prefix: 'fluentbit-s3-data'});
     } else {
-
       props.s3Bucket.addEventNotification(s3.EventType.OBJECT_CREATED, 
         new s3n.LambdaDestination(pluginDataResolver), 
-        // { prefix: props.project_name+'-kinesis-data' }
         { prefix: 'fluentbit-s3-data' } // FluentBit+S3 bucket prefix
       );
-      // pluginDataResolver.addEventSource(new S3EventSource(
-      //     props.s3Bucket,
-      //     {
-      //         events: [s3.EventType.OBJECT_CREATED],
-      //         filters: [{ prefix: props.project_name+'-kinesis-data' }]
-      //     }
-      // ));
     }
 
-    //ADDED by JM
     /**
      * Create a SQS queue to receive processed data from the S3 bucket
      */
-    const queue_processed_data = new sqs.Queue(this, "QueueS3ProcessedData", {
-      visibilityTimeout: cdk.Duration.seconds(300)
-    });
+    if (props.sqsForS3Notification) {
+      const queue_processed_data = new sqs.Queue(this, "QueueS3ProcessedData", {
+        visibilityTimeout: cdk.Duration.seconds(300)
+      });
+    }
   
     /**
      * Create a Lambda Function to load processed files to BigQuery
@@ -126,8 +119,8 @@ export class DataEnrichStack extends Construct {
           S3_BUCKET_NAME: props.s3Bucket.bucketName,
           S3_NEW_FILE_PREFIX: 'processed-nginx-logs/',
           DEFAULT_TABLENAME: 'lambda-target-real-2',
-          BQ_PROJECT: 'us-jm-project-1.data_ingestion_test_1',
-          BQ_DATASET: 'data_ingestion_test_1',
+          BQ_PROJECT: props.bqProjectName'us-jm-project-1.data_ingestion_test_1',
+          BQ_DATASET: props.bqDataSet'data_ingestion_test_1',
         },
         timeout: cdk.Duration.seconds(90),
         //role: props.role,
@@ -145,7 +138,6 @@ export class DataEnrichStack extends Construct {
   
       props.s3Bucket.addEventNotification(s3.EventType.OBJECT_CREATED, 
         new s3n.LambdaDestination(loadLogfileToBq), 
-        // { prefix: props.project_name+'-kinesis-data' }
         { prefix: 'processed-nginx-logs' } // FluentBit+S3 bucket prefix
       );
     }
