@@ -44,7 +44,9 @@ Extend the EBS volume to at 20GB in the AWS console, because the default EBS vol
 
 ### Run commands in Cloud9
 > lsblk
+
 > sudo growpart /dev/nvme0n1 1
+
 > sudo xfs_growfs -d /
 
 ## Run below commands to deploy the project using AWS CDK
