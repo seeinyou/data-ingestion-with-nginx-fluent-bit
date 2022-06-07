@@ -51,11 +51,22 @@ Extend the EBS volume to at 20GB in the AWS console, because the default EBS vol
 
 ## Run below commands to deploy the project using AWS CDK
 > wget "https://github.com/seeinyou/data-ingestion-with-nginx-fluent-bit/archive/refs/heads/master.zip"
+
 > unzip master.zip
+
+
 > cd data-ingestion-with-nginx-fluent-bit/
+
 > npm install
+
 > npx cdk deploy --context targetEnv=Dev
 
 ## Configure the stack
 
-Please find the configurations of CDK in root/cdk.context.json
+Please find the configurations of CDK in root/cdk.context.json.
+
+# Testing
+After the stack is created, CDK will output an Elastic Load Balancer endpoint. You can send POST requests to the endpoint on configured port and path /log. The endpoint will be a HTTPS endpoint when you provide the ACM ARN in root/cdk.context.json. 
+
+For example:
+> curl -d "log-data" http://elb-endpoint:[port]/log
