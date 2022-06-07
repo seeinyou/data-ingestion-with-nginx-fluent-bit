@@ -1,0 +1,42 @@
+{
+  "env": {
+    "Prod": {
+      "project_name": "uba-app",
+      "cidr": "10.0.0.0/16",
+      "nginx_http_port": 4891,
+      "asg_min_capacity": 2,
+      "asg_max_capacity": 36,
+      "asg_desired_capacity": 2,
+      "ingestion_output_target_s3": true,
+      "ingestion_output_target_kinesis_stream": false,
+      "ingestion_output_target_msk": false,
+      "fluentbit_log_level": "info",
+      "certificate_arn": "",
+      "kafka_connect_key_id": "",
+      "kafka_connect_secret": "",
+      "enable_data_enrich": true,
+      "enable_data_enrich_with_sqs": true,
+      "bq_project_name": "string",
+      "bq_dataset": "string"
+    },
+    "Dev": {
+      "project_name": "uba-app-test",
+      "cidr": "10.1.0.0/16",
+      "nginx_http_port": 4891,
+      "asg_min_capacity": 2,
+      "asg_max_capacity": 36,
+      "asg_desired_capacity": 2,
+      "ingestion_output_target_s3": true,
+      "ingestion_output_target_kinesis_stream": false,
+      "ingestion_output_target_msk": false,
+      "fluentbit_log_level": "info",
+      "certificate_arn": "",
+      "kafka_connect_key_id": "",
+      "kafka_connect_secret": "",
+      "enable_data_enrich": true,
+      "enable_data_enrich_with_sqs": true,
+      "bq_project_name": "us-jm-project-1.data_ingestion_test_1",
+      "bq_dataset": "data_ingestion_test_1"
+    }
+  }
+}
