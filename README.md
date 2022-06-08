@@ -54,7 +54,6 @@ Extend the EBS volume to at 20GB in the AWS console, because the default EBS vol
 
 > unzip master.zip
 
-
 > cd data-ingestion-with-nginx-fluent-bit/
 
 > npm install
@@ -64,6 +63,25 @@ Extend the EBS volume to at 20GB in the AWS console, because the default EBS vol
 ## Configure the stack
 
 Please find the configurations of CDK in root/cdk.context.json.
+
+Configurations:
+- project_name
+- cidr: VPC CIDR
+- nginx_http_port
+- asg_min_capacity: The minimum capacity setting of the auto-scaling group
+- asg_max_capacity: The maximum capacity setting of the auto-scaling group
+- asg_desired_capacity: The desired capacity setting of the auto-scaling group
+- ingestion_output_target_s3: Fluent-bit outputs logs to S3
+- ingestion_output_target_kinesis_stream: Fluent-bit outputs logs to Kinesis
+- ingestion_output_target_msk: Fluent-bit outputs logs to MSK (Kafka)
+- fluentbit_log_level
+- certificate_arn: ACM ARN of the domain SSL/TLS certificate
+- kafka_connect_key_id: Only valid when "ingestion_output_target_msk" is set to true
+- kafka_connect_secret: Only valid when "ingestion_output_target_msk" is set to true
+- enable_data_enrich: Enable the Lambda function to process log files on S3
+- enable_data_enrich_with_sqs: Enable S3 send the creation event to SQS for the Lambda function
+- bq_project_name: The BigQuery project name for final destination
+- bq_dataset: The BigQuery dataset name for final destination
 
 # Testing
 After the stack is created, CDK will output an Elastic Load Balancer endpoint. You can send POST requests to the endpoint on configured port and path /log. The endpoint will be a HTTPS endpoint when you provide the ACM ARN in root/cdk.context.json. 
