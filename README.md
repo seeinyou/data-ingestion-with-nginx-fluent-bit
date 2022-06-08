@@ -66,7 +66,7 @@ Please find the configurations of CDK in root/cdk.context.json.
 
 Configurations:
 - project_name
-- cidr: VPC CIDR
+- cidr: VPC CIDR. Please don't overlap with your other VPCs.
 - nginx_http_port
 - asg_min_capacity: The minimum capacity setting of the auto-scaling group
 - asg_max_capacity: The maximum capacity setting of the auto-scaling group
