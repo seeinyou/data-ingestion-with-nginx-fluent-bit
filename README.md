@@ -3,6 +3,8 @@
 The project is a PoC of data ingestion with Nginx and Fluent Bit to BigQuery.
 This solution is built with AWS CDK. For more information of CDK, please check the document: https://aws.amazon.com/cdk/. 
 
+The project uses AWS Lambda functions to process data and call the BigQuery connect API to load log files into BigQuery for near real-time analytics. BigQuery S3 Transfer job is another option when near real-time analytics is not required.
+
 # Prerequisites:
 ## AWS
 - An AWS account
@@ -33,14 +35,21 @@ You can also export BigQuery schemas using the command below, and put the schema
 
 # Deployment instruction
 
+## Deployment considerations
+- Please don't use Amazon T family EC2 instances for your production environment
+- Use Graviton2 (c6g, m6g, etc.) families for Nginx and FluentBit. They can provide better price-performance for Nginx in most cases.
+  - Reference: https://www.nginx.com/blog/optimize-nginx-plus-deployment-arm-based-amazon-ec2-m6g-instances/
+- Try to implement HTTP/2 on the client side and Amazon Application Load Balancer for log uploading to improve performance
+- Configure Amazon S3 lifecycle management to move S3 objects to Glacier Instant Retrieval or use S3 Intelligence-tiering class to reduce long-term storage costs.
+
 ## Deploy with Cloud9
-Create an [AWS Cloud9](https://aws.amazon.com/cloud9/) environment in the region where you want to deploy the project, and upload the ZIP file into the Cloud9 environment.
+Create an [AWS Cloud9](https://aws.amazon.com/cloud9/) environment in the region where you want to deploy the project, and download/upload the ZIP file into the Cloud9 environment.
 
 *AWS Cloud9 is a cloud-based integrated development environment (IDE) that lets you write, run, and debug your code with just a browser. It includes a code editor, debugger, and terminal.*
 
 ## Extend the EBS volume of Cloud9 (20GB)
 
-Extend the EBS volume to at 20GB in the AWS console, because the default EBS volume (10GB) is not enough for compiling the CDK package . It might take a few minutes. For more information, please check the [extend an EBS volume on Linux](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/recognize-expanded-volume-linux.html) document. 
+Extend the EBS volume to at 20GB on the AWS EC2 console, because the default EBS volume (10GB) is not enough for compiling the CDK package . It might take a few minutes. For more information, please check the [extend an EBS volume on Linux](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/recognize-expanded-volume-linux.html) document. 
 
 ### Run commands in Cloud9
 > lsblk
