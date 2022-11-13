@@ -211,13 +211,17 @@ def lambda_handler(event, context):
 
                 result_str = result_str.join(result_str_list[table_lists.index(dest_prefix)])
 
+                # Gzip compress of the string
+                result_str_gzip = gzip.compress(result_str.encode("utf-8"))
+
                 try: 
                     s3_obj = s3_resource.Object(bucket_name, destination)
                     print('### TARGET: S3 object length = ', s3_obj.content_length)
                     
                 except Exception as e:
                     print('### S3 EXCEPTION:', e)
-                    s3_resource.Object(bucket_name, destination).put(Body=result_str)
+                    # Put the gzip version to S3
+                    s3_resource.Object(bucket_name, destination).put(Body=result_str_gzip)
                     print('### SAVE TO S3', destination)
                 
             # The message has been successfully processed. Remove it from the queue.

@@ -154,6 +154,9 @@ def lambda_handler(event, context):
                 print('### DESTINATION:', destination)
 
                 result_str = result_str.join(result_str_list[table_lists.index(dest_prefix)])
+                # Gzip compress output file
+                result_str = gzip.compress(result_str.encode('utf-8'))
+
                 s3_resource.Object(bucket_name, destination).put(Body=result_str)
 
     except Exception as e:
